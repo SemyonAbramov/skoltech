@@ -2,52 +2,53 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct node;
+struct successor_node;
 
-typedef struct node {
-	struct node* next; 
+typedef struct successor_node {
+	struct successor_node* next; 
 	int dst;
 	int weight;
-	int visited;
-	int unw_path_len;
-} node_t;
+} successor_node_t;
 
-node_t** adj_lists;
+typedef struct vertice {
+	successor_node_t* next_adj_node;
+	int unw_shortest;
+} vertice_t;
+
+vertice_t* adj_lists;
 unsigned size_of_adj_lists;
 
-node_t* create_node(int dst, int weight)
-{
-	node_t* new_node = malloc(sizeof(node_t));
-	// memset();
-	new_node->dst = dst;
-	new_node->weight = weight;
-	new_node->next = NULL;
+//node_t** adj_lists;
+//unsigned size_of_adj_lists;
 
-	return new_node;
-}
-
-int init_adj_lists(unsigned num_of_vertices)
+void init_adj_lists(unsigned num_of_vertices)
 {
-	adj_lists = malloc(num_of_vertices * sizeof(node_t*));
+	adj_lists = malloc(num_of_vertices * sizeof(vertice_t));
 	size_of_adj_lists = num_of_vertices;
 
 	unsigned i;
 	for (i = 0; i < num_of_vertices; i++) {
-		adj_lists[i] = NULL;
+		adj_lists[i].next_adj_node = NULL;
+		adj_lists[i].unw_shortest = -1;
 	}
-
-	return 0;
 }
+
+
+successor_node_t* create_node(int dst, int weight)
+{
+	successor_node_t* new_node = malloc(sizeof(successor_node_t));
+	// memset();
+	new_node->dst = dst;
+	new_node->weight = weight;
+	new_node->next = NULL;
+	return new_node;
+}
+
 
 void add_item_to_adj_lists(unsigned src, unsigned dst)
 {
-//	printf("src: %d, dst: %d\n", src, dst);
-
-	node_t* new_node;
-	node_t** list = &adj_lists[src];
-
-//	printf("list: %p\n", list);
-//	printf("brk 1\n");
+	successor_node_t* new_node;
+	successor_node_t** list = &adj_lists[src].next_adj_node;
 
 	/* TODO: Need to check if this edge already saved */
 	if (!(*list)) {
@@ -65,12 +66,12 @@ void add_item_to_adj_lists(unsigned src, unsigned dst)
 
 void print_adj_lists()
 {
-	node_t* list;
+	successor_node_t* list;
 
 	int i;
 
 	for (i = 0; i < size_of_adj_lists; i++) {
-		list = adj_lists[i];
+		list = adj_lists[i].next_adj_node;
 
 		while (list) {
 			printf("%d, %d \n", i, list->dst);
@@ -78,18 +79,23 @@ void print_adj_lists()
 		}
 	}
 }
-
-
+/*
 void bfs(node_t** adj_list, int src)
 {
 	node_t* list;
 	int i;
+	int visited[size_of_adj_lists];
+
+	for (i = 0; i < size_of_adj_lists; i++) {
+		visited[i] = 0;
+	}
+
 
 	for (i = 0; i < size_of_adj_lists; i++) {
 		list = adj_list[i];
 
 		while (list) {
-			list->visited = -1;
+			
 			list->unw_path_len = -1;
 			list = list->next;
 		}
@@ -98,7 +104,7 @@ void bfs(node_t** adj_list, int src)
 
 
 }
-
+*/
 
 int main(int argc, char** argv)
 {
@@ -153,8 +159,8 @@ int main(int argc, char** argv)
 		add_item_to_adj_lists(src, dst);
 	}
 
-//	printf("### print created lists ###\n");
-//	print_adj_lists();
+	printf("### print created lists ###\n");
+	print_adj_lists();
 
 	return 0;
 }
