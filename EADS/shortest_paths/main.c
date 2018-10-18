@@ -571,6 +571,12 @@ int main(int argc, char** argv)
 
 	printf("The shortest path from %d to %d is %d\n", source_node_index, destination_node_index, min_path);
 
+	FILE* ofp = fopen("output.txt", "w+");
+	fprintf(ofp, "%d\n", min_path);
+
+	fclose(ifp);
+	fclose(ofp);
+
 	deinit_adj_lists();
 
 	return 0;
