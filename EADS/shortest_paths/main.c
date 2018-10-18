@@ -6,8 +6,8 @@
 
 /* 
  * TODO:
- * 1) Early exit
- * 2) Deinit memory, check with valgrind
+ * 1) Early exit: +
+ * 2) Deinit memory, check with valgrind: (need to check)
  * 3) Clean code
  * 4) Try to avoid using bfs
  * 5) Performance optimizations
@@ -49,6 +49,24 @@ void init_adj_lists(unsigned num_of_vertices)
 		adj_lists[i].next_adj_node = NULL;
 		adj_lists[i].val = i;
 	}
+}
+
+void deinit_adj_lists()
+{
+	int i;
+	successor_node_t* del_node, *list;
+
+	for (i = 0; i < size_of_adj_lists; i++) {
+		list = adj_lists[i].next_adj_node;
+
+		while (list) {
+			del_node = list;
+			list = list->next;
+			free(del_node);
+		}
+	}
+
+	free(adj_lists);
 }
 
 successor_node_t* create_node(int dst, int weight)
@@ -102,62 +120,60 @@ Queue impementation
 
 typedef struct queue
 { 
-    int front, rear, size; 
-    unsigned capacity; 
-    int* array; 
+	int front, rear, size;
+	unsigned capacity;
+	int* array;
 }queue_t; 
   
 queue_t* createQueue(unsigned capacity) 
 { 
-    queue_t* queue = (queue_t*) malloc(sizeof(queue_t)); 
-    queue->capacity = capacity; 
-    queue->front = queue->size = 0;  
-    queue->rear = capacity - 1;  // This is important, see the enqueue 
-    queue->array = (int*) malloc(queue->capacity * sizeof(int)); 
-    return queue; 
-} 
-  
-// Queue is full when size becomes equal to the capacity  
+	queue_t* queue = (queue_t*) malloc(sizeof(queue_t)); 
+	queue->capacity = capacity; 
+	queue->front = queue->size = 0;  
+	queue->rear = capacity - 1;  // This is important, see the enqueue 
+	queue->array = (int*) malloc(queue->capacity * sizeof(int)); 
+	return queue; 
+}
+
+void deinit_queue(queue_t* queue)
+{
+	free(queue->array);
+	free(queue);
+}
+
 int isFull(queue_t* queue) 
 {  return (queue->size == queue->capacity);  } 
-  
-// Queue is empty when size is 0 
+
 int isEmpty(queue_t* queue) 
 {  return (queue->size == 0); } 
-  
-// Function to add an item to the queue.   
-// It changes rear and size 
+
 void enqueue(queue_t* queue, int item) 
 { 
-    if (isFull(queue)) 
-        return;
-    queue->rear = (queue->rear + 1)%queue->capacity; 
-    queue->array[queue->rear] = item; 
-    queue->size = queue->size + 1; 
-    printf("%d enqueued to queue\n", item); 
+	if (isFull(queue)) 
+		return;
+	queue->rear = (queue->rear + 1)%queue->capacity; 
+	queue->array[queue->rear] = item; 
+	queue->size = queue->size + 1; 
+	printf("%d enqueued to queue\n", item); 
 } 
-  
-// Function to remove an item from queue.  
-// It changes front and size 
+ 
 int dequeue(queue_t* queue) 
 { 
-    if (isEmpty(queue)) 
-        return -1; 
-    int item = queue->array[queue->front]; 
-    queue->front = (queue->front + 1)%queue->capacity; 
-    queue->size = queue->size - 1; 
-    return item;
+	if (isEmpty(queue))
+		return -1; 
+	int item = queue->array[queue->front];
+	queue->front = (queue->front + 1)%queue->capacity;
+	queue->size = queue->size - 1;
+	return item;
 } 
-  
-// Function to get front of queue 
-int front(queue_t* queue) 
+
+int front(queue_t* queue)
 { 
-    if (isEmpty(queue)) 
-        return -1; 
-    return queue->array[queue->front]; 
+	if (isEmpty(queue))
+	    return -1; 
+	return queue->array[queue->front]; 
 } 
-  
-// Function to get rear of queue 
+
 int rear(queue_t* queue) 
 { 
     if (isEmpty(queue)) 
@@ -198,6 +214,8 @@ void bfs(vertice_t* adj_list, int src)
 			list = list->next;
 		}
 	}
+
+	deinit_queue(queue);
 }
 
 void adjust_weights(vertice_t* adj_list)
@@ -215,8 +233,6 @@ void adjust_weights(vertice_t* adj_list)
 		while (list) {
 			printf("dst node: %d    ", list->dst);
 
-//			w = adj_list[list->dst].unw_shortest;
-
 			printf("unw shortest path: %d\n", w);
 
 			if (w % 2 == 0)
@@ -229,7 +245,6 @@ void adjust_weights(vertice_t* adj_list)
 	}
 }
 
-
 void print_unw_shortest(vertice_t* adj_list, int s)
 {
 	int i;
@@ -237,19 +252,6 @@ void print_unw_shortest(vertice_t* adj_list, int s)
 		printf("shortest path from %d to %d: %d\n", s, i, adj_list[i].unw_shortest);
 	}
 }
-
-/* *** */
-
-struct node;
-
-typedef struct node {
-	int 			val;
-	int 			d_val;
-	int 			pred;
-	int 			weight;
-	int 			idx;
-	struct node* 	next; 
-} node_t;
 
 /* min heap impl */
 typedef struct minheap {
@@ -270,6 +272,12 @@ minheap_t* init_minheap(int capacity)
 		heap->array[i] = NULL;
 
 	return heap;
+}
+
+void deinit_minheap(minheap_t* heap)
+{
+	free(heap->array);
+	free(heap);
 }
 
 int get_parent_idx(int i) {	return (i - 1)/2;	}
@@ -408,7 +416,6 @@ void dijkstra(vertice_t* adj_list, int src)
 
 	int i;
 	for (i = 0; i < size_of_adj_lists; i++) {
-//		list[i].val = i;							// FIXME: ???
 		list[i].d_val = INFINITY;
 		list[i].pred = -1;
 	}
@@ -447,17 +454,8 @@ void dijkstra(vertice_t* adj_list, int src)
 
 		extract_node_with_min_dval(heap);	
 	}
-}
 
-void relax_early_exit(vertice_t* vertice, successor_node_t* node)
-{
-	int relaxed = vertice->d_val + node->weight;
-
-	printf("relax vertice: %d, node: %d, vertice d_val = %d, node weight = %d, relaxed val = %d \n", vertice->val, node->dst, vertice->d_val, node->weight, relaxed);
-
-	if (relaxed < adj_lists[node->dst].d_val) {
-		adj_lists[node->dst].d_val = relaxed;
-	}
+	deinit_minheap(heap);
 }
 
 int dijkstra_with_early_exit(vertice_t* adj_list, int src, int dst)
@@ -485,8 +483,10 @@ int dijkstra_with_early_exit(vertice_t* adj_list, int src, int dst)
 	while (is_minheap_empty(heap) != 1) {
 		proc_node = extract_node_with_min_dval(heap);
 		
-		if (proc_node->val == dst)
+		if (proc_node->val == dst) {
+			deinit_minheap(heap);
 			return adj_list[dst].d_val;
+		}
 
 		successor_node = proc_node->next_adj_node;
 
@@ -496,10 +496,9 @@ int dijkstra_with_early_exit(vertice_t* adj_list, int src, int dst)
 		}
 	}
 
+	deinit_minheap(heap);
 	return -1;
 }
-
-
 
 void print_dval(vertice_t* adj_list)
 {
@@ -582,12 +581,13 @@ int main(int argc, char** argv)
 	adj_lists[4].next_adj_node->weight = 3;	
 
 	print_adj_lists();
-//	dijkstra(adj_lists, source_node_index);
+
 	int min_path = dijkstra_with_early_exit(adj_lists, source_node_index, destination_node_index);
 	print_dval(adj_lists);
 
-
 	printf("The shortest path from %d to %d is %d\n", source_node_index, destination_node_index, min_path);
+
+	deinit_adj_lists();
 
 	return 0;
 }
