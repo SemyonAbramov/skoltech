@@ -11,10 +11,10 @@
  * 3) Clean code
  * 4) Try to avoid using bfs
  * 5) Performance optimizations
+ * 6) Remove printfs	
  */
 
 /* FIXME: Need to change number here to deal with huge graphs */
-
 #define INFINITY	(0x7FFFFFFF / 2)
 
 struct successor_node;
@@ -103,7 +103,6 @@ void print_adj_lists()
 	successor_node_t* list;
 
 	int i;
-
 	for (i = 0; i < size_of_adj_lists; i++) {
 		list = adj_lists[i].next_adj_node;
 
@@ -114,25 +113,25 @@ void print_adj_lists()
 	}
 }
 
-/*
-Queue impementation
-*/
+/* Queue impementation */
 
 typedef struct queue
 { 
-	int front, rear, size;
+	int front;
+	int rear; 
+	int size;
 	unsigned capacity;
 	int* array;
 }queue_t; 
   
-queue_t* createQueue(unsigned capacity) 
+queue_t* init_queue(unsigned capacity) 
 { 
-	queue_t* queue = (queue_t*) malloc(sizeof(queue_t)); 
-	queue->capacity = capacity; 
-	queue->front = queue->size = 0;  
-	queue->rear = capacity - 1;  // This is important, see the enqueue 
-	queue->array = (int*) malloc(queue->capacity * sizeof(int)); 
-	return queue; 
+	queue_t* queue = (queue_t*) malloc(sizeof(queue_t));
+	queue->capacity = capacity;
+	queue->front = queue->size = 0;
+	queue->rear = capacity - 1;
+	queue->array = (int*) malloc(queue->capacity * sizeof(int));
+	return queue;
 }
 
 void deinit_queue(queue_t* queue)
@@ -141,15 +140,12 @@ void deinit_queue(queue_t* queue)
 	free(queue);
 }
 
-int isFull(queue_t* queue) 
-{  return (queue->size == queue->capacity);  } 
-
-int isEmpty(queue_t* queue) 
-{  return (queue->size == 0); } 
+int is_queue_full(queue_t* queue)	{	return (queue->size == queue->capacity);	} 
+int is_queue_empty(queue_t* queue)	{	return (queue->size == 0);	}
 
 void enqueue(queue_t* queue, int item) 
 { 
-	if (isFull(queue)) 
+	if (is_queue_full(queue)) 
 		return;
 	queue->rear = (queue->rear + 1)%queue->capacity; 
 	queue->array[queue->rear] = item; 
@@ -159,7 +155,7 @@ void enqueue(queue_t* queue, int item)
  
 int dequeue(queue_t* queue) 
 { 
-	if (isEmpty(queue))
+	if (is_queue_empty(queue))
 		return -1; 
 	int item = queue->array[queue->front];
 	queue->front = (queue->front + 1)%queue->capacity;
@@ -168,20 +164,20 @@ int dequeue(queue_t* queue)
 } 
 
 int front(queue_t* queue)
-{ 
-	if (isEmpty(queue))
-	    return -1; 
-	return queue->array[queue->front]; 
-} 
+{
+	if (is_queue_empty(queue))
+		return -1;
+	return queue->array[queue->front];
+}
 
-int rear(queue_t* queue) 
-{ 
-    if (isEmpty(queue)) 
-        return -1; 
-    return queue->array[queue->rear]; 
-} 
+int rear(queue_t* queue)
+{
+	if (is_queue_empty(queue))
+		return -1;
+	return queue->array[queue->rear];
+}
 
-////////////////////////////////////////
+/* Finish of queue implementation */
 
 void bfs(vertice_t* adj_list, int src)
 {
@@ -195,12 +191,12 @@ void bfs(vertice_t* adj_list, int src)
 
 	adj_list[src].unw_shortest = 0;
 
-	queue_t* queue = createQueue(size_of_adj_lists);
+	queue_t* queue = init_queue(size_of_adj_lists);
 	enqueue(queue, src);
 
 	int dq = 0;
 
-	while (isEmpty(queue) != 1) {
+	while (is_queue_empty(queue) != 1) {
 		dq = dequeue(queue);
 
 		list = adj_list[dq].next_adj_node;
@@ -281,9 +277,7 @@ void deinit_minheap(minheap_t* heap)
 }
 
 int get_parent_idx(int i) {	return (i - 1)/2;	}
-
 int get_left_child(int i) {	return (2*i + 1);	}
-
 int get_right_child(int i) {	return (2*i + 2);	}
 
 void exchange(vertice_t** a, vertice_t** b)
@@ -315,7 +309,7 @@ void insert_node(minheap_t* heap, vertice_t* node)
 	}
 }
 
-void decrease_dval(minheap_t* heap, int i, int new_val)				// FIXME: Rename it to change key
+void decrease_dval(minheap_t* heap, int i, int new_val)
 {
 	int idx = i;
   	heap->array[idx]->d_val = new_val; 
@@ -341,14 +335,13 @@ void min_heapify(minheap_t* heap, int i)
 	}
 }
 
-vertice_t* extract_node_with_min_dval(minheap_t* heap)			// extract_min
+vertice_t* extract_node_with_min_dval(minheap_t* heap)
 {
 	printf("extract node with min dval\n");
 
 	if (heap->size <= 0) {
 		printf("Heap size <= 0\n");
-		//return INT_MAX;
-		return NULL;			// FIXME:
+		return NULL;						// FIXME:
 	}
 
 	if (heap->size == 1) {
@@ -424,37 +417,28 @@ void dijkstra(vertice_t* adj_list, int src)
 	list[src].d_val = 0;
 
 	vertice_t* processed_nodes = NULL;
-	// Here comes priority queue (hah)
 
 	minheap_t* heap = init_minheap(size_of_adj_lists);
-
+	
 	for (i = 0; i < size_of_adj_lists; i++)
 		insert_node(heap, &list[i]);	
 
 	vertice_t* proc_node;
 	successor_node_t* successor_node;
 
-//	print_minheap(heap);
-
 	while (is_minheap_empty(heap) != 1) {
 		
 		print_minheap(heap);
-
-//		proc_node = extract_node_with_min_dval(heap);
 		
 		proc_node = get_node_with_min_dval(heap);
-		
 		successor_node = proc_node->next_adj_node;
 
 		while (successor_node) {
-
 			relax(proc_node, successor_node);
 			successor_node = successor_node->next;		
 		}
-
 		extract_node_with_min_dval(heap);	
 	}
-
 	deinit_minheap(heap);
 }
 
