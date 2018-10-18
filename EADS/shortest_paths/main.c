@@ -4,6 +4,15 @@
 #include <stdint.h>
 #include <limits.h>
 
+/* 
+ * TODO:
+ * 1) Early exit
+ * 2) Deinit memory, check with valgrind
+ * 3) Clean code
+ * 4) Try to avoid using bfs
+ * 5) Performance optimizations
+ */
+
 /* FIXME: Need to change number here to deal with huge graphs */
 
 #define INFINITY	(0x7FFFFFFF / 2)
@@ -15,13 +24,6 @@ typedef struct successor_node {
 	int dst;
 	int weight;
 } successor_node_t;
-
-/*
-typedef struct vertice {
-	successor_node_t* next_adj_node;
-	int unw_shortest;
-} vertice_t;
-*/
 
 typedef struct vertice {
 	successor_node_t* next_adj_node;
@@ -45,6 +47,7 @@ void init_adj_lists(unsigned num_of_vertices)
 	unsigned i;
 	for (i = 0; i < num_of_vertices; i++) {
 		adj_lists[i].next_adj_node = NULL;
+		adj_lists[i].val = i;
 	}
 }
 
@@ -58,7 +61,7 @@ successor_node_t* create_node(int dst, int weight)
 	return new_node;
 }
 
-
+/* Slow method */
 void add_item_to_adj_lists(unsigned src, unsigned dst)
 {
 	successor_node_t* new_node;
@@ -73,7 +76,7 @@ void add_item_to_adj_lists(unsigned src, unsigned dst)
 	while ((*list)->next) {
 		(*list) = (*list)->next;
 	}
-		
+	
 	(*list)->next = create_node(dst, -1);
 }	
 
@@ -92,7 +95,6 @@ void print_adj_lists()
 		}
 	}
 }
-
 
 /*
 Queue impementation
@@ -295,7 +297,7 @@ void insert_node(minheap_t* heap, vertice_t* node)
 	}
 
 	heap->size += 1;
-	int i = heap->size - 1;		// 
+	int i = heap->size - 1;		//
 	heap->array[i] = node;
 	heap->array[i]->idx = i;
 
@@ -333,6 +335,8 @@ void min_heapify(minheap_t* heap, int i)
 
 vertice_t* extract_node_with_min_dval(minheap_t* heap)			// extract_min
 {
+	printf("extract node with min dval\n");
+
 	if (heap->size <= 0) {
 		printf("Heap size <= 0\n");
 		//return INT_MAX;
@@ -355,6 +359,11 @@ vertice_t* extract_node_with_min_dval(minheap_t* heap)			// extract_min
 	return minval_node;
 }
 
+vertice_t* get_node_with_min_dval(minheap_t* heap)
+{
+	return heap->array[0];
+}
+
 void delete_key(minheap_t* heap, int key)
 {
 	decrease_dval(heap, key, INT_MIN);
@@ -371,7 +380,7 @@ void print_minheap(minheap_t* heap)
 	int i;
 
 	for (i = 0; i < heap->size; i++)
-		printf("dval: %d, idx: %d \n", heap->array[i]->d_val, heap->array[i]->idx);
+		printf("vertice num: %d, dval: %d, idx: %d \n", heap->array[i]->val, heap->array[i]->d_val, heap->array[i]->idx);
 }
 
 int is_minheap_empty(minheap_t* heap)
@@ -380,7 +389,6 @@ int is_minheap_empty(minheap_t* heap)
 }
 
 /************/
-
 
 void relax(vertice_t* vertice, successor_node_t* node)
 {
@@ -396,18 +404,6 @@ void relax(vertice_t* vertice, successor_node_t* node)
 
 void dijkstra(vertice_t* adj_list, int src)
 {
-/*
-	node_t* list = malloc(sizeof(node_t) * size_of_adj_lists);
-
-	int i;
-	for (i = 0; i < size_of_adj_lists; i++) {
-		list[i].val = i; 							// FIXME: ???
-		list[i].d_val = INFINITY;
-		list[i].weight = -1;
-		list[i].pred = -1;
-		list[i].next = NULL;
-	}
-*/
 	vertice_t* list = adj_list;
 
 	int i;
@@ -416,7 +412,6 @@ void dijkstra(vertice_t* adj_list, int src)
 		list[i].d_val = INFINITY;
 		list[i].pred = -1;
 	}
-
 
 //	list[src].weight = 1;	// FIXME: ??? may be 0 ???
 	list[src].d_val = 0;
@@ -432,8 +427,15 @@ void dijkstra(vertice_t* adj_list, int src)
 	vertice_t* proc_node;
 	successor_node_t* successor_node;
 
+//	print_minheap(heap);
+
 	while (is_minheap_empty(heap) != 1) {
-		proc_node = extract_node_with_min_dval(heap);
+		
+		print_minheap(heap);
+
+//		proc_node = extract_node_with_min_dval(heap);
+		
+		proc_node = get_node_with_min_dval(heap);
 		
 		successor_node = proc_node->next_adj_node;
 
@@ -442,6 +444,8 @@ void dijkstra(vertice_t* adj_list, int src)
 			relax(proc_node, successor_node);
 			successor_node = successor_node->next;		
 		}
+
+		extract_node_with_min_dval(heap);	
 	}
 }
 
@@ -452,34 +456,6 @@ void print_dval(vertice_t* adj_list)
 		printf("for i: %d dval = %d\n", i, adj_list[i].d_val);
 	}
 }
-
-/*
-void dijkstra(vertice_t* adj_list, int src)
-{
-	int d_val[size_of_adj_lists];
-	int weights[size_of_adj_lists];
-	int pred[size_of_adj_lists];
-
-
-
-
-	int i;
-	for (i = 0; i < size_of_adj_lists; i++) {
-		weights[i] = -1;
-		d_val[i] = -1;
-		pred[i] = -1;
-	}
-
-	weights[src] = 1;	// ??? 0 or 1
-	d_val[src] = 0;
-
-	int processed[size_of_adj_lists];		
-
-
-
-}
-*/
-
 
 int main(int argc, char** argv)
 {
@@ -538,68 +514,12 @@ int main(int argc, char** argv)
 	print_adj_lists();
 
 /*
-	minheap_t* heap = init_minheap(10);
-
-	vertice_t* list = malloc(sizeof(vertice_t) * 10);
-
-
-
-	for (i = 0; i < 10; i++) {
-		list[i].val = i; 							// FIXME: ???
-		list[i].d_val = INFINITY;
-//		list[i].weight = -1;
-		list[i].pred = -1;
-//		list[i].next = NULL;
-		list[i].idx = -1;
-	}
-
-	list[0].d_val = 4;
-	list[1].d_val = 1;
-	list[2].d_val = 3;
-	list[3].d_val = 2;
-	list[4].d_val = 16;
-	list[5].d_val = 9;
-	list[6].d_val = 10;
-	list[7].d_val = 14;
-	list[8].d_val = 8;
-	list[9].d_val = 7;
-
-	for (i = 0; i < 10; i++)
-		insert_node(heap, &list[i]);
-
-	print_minheap(heap);
-
-	delete_node(heap, &list[5]);
-
-	print_minheap(heap);
-*/
-/*
-	minheap_t* heap = init_minheap(10);
-
-	insert_key(heap, 4);
-	insert_key(heap, 1);
-	insert_key(heap, 3);
-	insert_key(heap, 2);
-	insert_key(heap, 16);
-	insert_key(heap, 9);
-	insert_key(heap, 10);
-	insert_key(heap, 14);
-	insert_key(heap, 8);
-	insert_key(heap, 7);
-
-
-	print_minheap(heap);
-*/
-
-
-/*
 	bfs(adj_lists, source_node_index);
 	adjust_weights(adj_lists);
 
 	print_unw_shortest(adj_lists, source_node_index);
 */
 
-/*
 	adj_lists[0].next_adj_node->weight = 3;
 	adj_lists[0].next_adj_node->next->weight = 5;
 	adj_lists[1].next_adj_node->weight = 5;
@@ -608,7 +528,7 @@ int main(int argc, char** argv)
 	adj_lists[3].next_adj_node->weight = 5;
 	adj_lists[3].next_adj_node->next->weight = 5;
 	adj_lists[4].next_adj_node->weight = 3;	
-*/
+
 	print_adj_lists();
 	dijkstra(adj_lists, source_node_index);
 	print_dval(adj_lists);
