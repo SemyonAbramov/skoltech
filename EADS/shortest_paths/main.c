@@ -449,6 +449,58 @@ void dijkstra(vertice_t* adj_list, int src)
 	}
 }
 
+void relax_early_exit(vertice_t* vertice, successor_node_t* node)
+{
+	int relaxed = vertice->d_val + node->weight;
+
+	printf("relax vertice: %d, node: %d, vertice d_val = %d, node weight = %d, relaxed val = %d \n", vertice->val, node->dst, vertice->d_val, node->weight, relaxed);
+
+	if (relaxed < adj_lists[node->dst].d_val) {
+		adj_lists[node->dst].d_val = relaxed;
+	}
+}
+
+int dijkstra_with_early_exit(vertice_t* adj_list, int src, int dst)
+{
+	vertice_t* list = adj_list;
+
+	int i;
+	for (i = 0; i < size_of_adj_lists; i++) {
+		list[i].d_val = INFINITY;
+		list[i].pred = -1;
+	}
+
+	list[src].d_val = 0;
+	vertice_t* processed_nodes = NULL;
+	
+	// Here comes priority queue (hah)
+
+	minheap_t* heap = init_minheap(size_of_adj_lists);
+	for (i = 0; i < size_of_adj_lists; i++)
+		insert_node(heap, &list[i]);
+
+	vertice_t* proc_node;
+	successor_node_t* successor_node;
+
+	while (is_minheap_empty(heap) != 1) {
+		proc_node = extract_node_with_min_dval(heap);
+		
+		if (proc_node->val == dst)
+			return adj_list[dst].d_val;
+
+		successor_node = proc_node->next_adj_node;
+
+		while (successor_node) {
+			relax(proc_node, successor_node);
+			successor_node = successor_node->next;		
+		}
+	}
+
+	return -1;
+}
+
+
+
 void print_dval(vertice_t* adj_list)
 {
 	int i;
@@ -530,8 +582,12 @@ int main(int argc, char** argv)
 	adj_lists[4].next_adj_node->weight = 3;	
 
 	print_adj_lists();
-	dijkstra(adj_lists, source_node_index);
+//	dijkstra(adj_lists, source_node_index);
+	int min_path = dijkstra_with_early_exit(adj_lists, source_node_index, destination_node_index);
 	print_dval(adj_lists);
+
+
+	printf("The shortest path from %d to %d is %d\n", source_node_index, destination_node_index, min_path);
 
 	return 0;
 }
