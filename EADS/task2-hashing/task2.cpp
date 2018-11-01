@@ -12,7 +12,12 @@ class Node {
 		int height;
 		int length;
 		int index;
+
+		int first_parent;
+		int second_parent;
+
 		Node* next;
+
 
 	public:
 		Node(int w = 0, int h = 0, int l = 0, int i = 0);
@@ -21,6 +26,14 @@ class Node {
 		int get_width();
 		int get_height();
 		int get_length();
+
+		int is_glued();
+
+		void set_parents(int first, int second);
+
+		int get_big_parent();
+		int get_small_parent(); 
+		int get_node_index();
 };
 
 Node::Node(int w, int h, int l, int i)
@@ -29,13 +42,51 @@ Node::Node(int w, int h, int l, int i)
 	height = h;
 	length = l;
 	index = i;
+
+	first_parent = 0;
+	second_parent = 0;
 }
+
+Node::~Node()	{}
 
 int Node::get_width() { return width; }
 int Node::get_height() { return height; }
 int Node::get_length() { return length; }
 
+int Node::is_glued()
+{
+	if ((first_parent != 0) || (second_parent != 0))
+		return 1;
+	
+	return 0;
+}
+
+void Node::set_parents(int first, int second)
+{
+	first_parent = first;
+	second_parent = second;
+}
+
+int Node::get_big_parent()	
+{	
+	if (second_parent < first_parent)
+		return first_parent;
+
+	return second_parent;
+}
+
+int Node::get_small_parent()	
+{	
+	if (first_parent < second_parent)
+		return first_parent;
+
+	return second_parent;
+}
+
+int Node::get_node_index()	{	return index;	}
+
 Node* current_max_node;
+std::list<Node*> new_glued_nodes;
 
 int get_mix_side_of_box(Node* node)
 {
@@ -56,7 +107,8 @@ int get_mix_side_of_box(Node* node)
 	}
 }
 
-void check_max_node(Node** cur_node, Node** new_node)
+//void check_max_node(Node** cur_node, Node** new_node)
+int check_max_node(Node** cur_node, Node** new_node)
 {
 	Node* c_node = *cur_node;
 	Node* n_node = *new_node;
@@ -64,8 +116,12 @@ void check_max_node(Node** cur_node, Node** new_node)
 	int cur_min = get_mix_side_of_box(c_node);
 	int new_min = get_mix_side_of_box(n_node);
 
-	if (cur_min < new_min)
-		*cur_node = *new_node;
+	if (cur_min < new_min) {
+ 		*cur_node = *new_node;
+		return 1;
+	}
+
+	return 0;
 }
 
 #define HTABLE_SIZE		409
@@ -184,6 +240,8 @@ void glue_two_nodes(Node* node0, Node* node1)
 	int l1 = node1->get_length();	
 	int w2 = 0, h2 = 0, l2 = 0;
 
+	// FIXME: Need to rewrite as if - else
+
 	if ((w0 == w1) || (w0 == l1) || (w0 == h1)) {
 		if (w0 == w1) {
 			w2 = w0;
@@ -260,22 +318,13 @@ void glue_two_nodes(Node* node0, Node* node1)
 		}
 	}
 
-	cout << "dual node" << endl;
-
-	cout << "w0: " << w0 << endl;
-	cout << "h0: " << h0 << endl;
-	cout << "l0: " << l0 << endl;
-
-	cout << "w1: " << w1 << endl;
-	cout << "h1: " << h1 << endl;
-	cout << "l1: " << l1 << endl;
-
-	cout << "w2: " << w2 << endl;
-	cout << "h2: " << h2 << endl;
-	cout << "l2: " << l2 << endl;
-
 	Node* dual_node = new Node(w2, h2, l2, 0);
-	check_max_node(&current_max_node, &dual_node);
+	dual_node->set_parents(node0->get_node_index(), node1->get_node_index());
+
+	if (check_max_node(&current_max_node, &dual_node))
+		new_glued_nodes.push_back(dual_node);
+	else
+		delete dual_node;
 }
 
 void check_two_sides(HashTable* hash_table, Node* new_node, int side_0, int side_1)
@@ -284,14 +333,9 @@ void check_two_sides(HashTable* hash_table, Node* new_node, int side_0, int side
 	int num_of_nodes = hash_table->get_num_of_nodes_in_chain(side_0 + side_1);
 	int max_side = 0;	
 
-
 	for (int i = 0; i < num_of_nodes; i++) {
 		node = hash_table->get_node_from_chain_by_index(side_0 + side_1, i);		
-//			max_side = glue_two_nodes_and_get_min_side(node, new_node);
-
-		glue_two_nodes(node, new_node);	
-//		if (max_side)
-//			cout << max_side << endl;
+		glue_two_nodes(node, new_node);
 	}
 
 }
@@ -318,11 +362,10 @@ int main()
 	int num_of_boxes = 0;
 	infile >> num_of_boxes;
 
-	
 	int width  = 0, height = 0, length = 0;
 	Node* new_node;
 
-	for (int i = 0; i < num_of_boxes; i++) {
+	for (int i = 1; i <= num_of_boxes; i++) {
 		infile >> width >> height >> length;
 		new_node = new Node(width, height, length, i);
 
@@ -333,7 +376,18 @@ int main()
 		hash_table->add_node(new_node, length + height);
 	}
 
-	cout << current_max_node->get_width() << current_max_node->get_height() << current_max_node->get_length() << endl;
+	int num_of_glued_boxes = current_max_node->is_glued() + 1;
+
+	cout << num_of_glued_boxes << endl;
+
+	if (current_max_node->is_glued()) {
+		cout << current_max_node->get_small_parent() << " " << current_max_node->get_big_parent() << endl;
+
+	} else {
+		cout << current_max_node->get_node_index() << endl;
+	}
+
+	cout << current_max_node->get_width() << " " << current_max_node->get_height() << " " << current_max_node->get_length() << endl;
 
 	return 0;
 }
