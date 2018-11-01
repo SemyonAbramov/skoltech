@@ -169,59 +169,6 @@ Node* HashTable::get_node_from_chain_by_index(int key, int index)
 	return *i;
 }
 
-int glue_two_nodes_and_get_min_side(Node* node0, Node* node1)
-{
-	int w0 = node0->get_width();
-	int h0 = node0->get_height();
-	int l0 = node0->get_length();
-	int w1 = node1->get_width();
-	int h1 = node1->get_height();
-	int l1 = node1->get_length();	
-	int w2 = 0, h2 = 0, l2 = 0;
-
-	if ((w0 == w1) || (w0 == l1) || (w0 == h1)) {
-		if (w0 == w1) {
-			if (l0 == l1)
-				return (h0 + h1);
-			if (h0 == h1)
-				return (l0 + l1);
-			if (h0 == l1)
-				return (h1 + l0);
-			else
-				return (h0 + l1);
-		}
-
-		if (w0 == l1) {
-			if (l0 == w1)
-				return (h0 + h1);
-			if (l0 == h1)
-				return (h0 + w1);
-			if (h0 == w1)
-				return (h1 + l0);
-			if (h0 == h1)
-				return (w1 + l0);
-		}
-
-		if (w0 == h1) {
-			if (l0 == w1)
-				return (h0 + l1);
-			if (l0 == l1)
-				return (h0 + w1);
-			if (h0 == w1)
-				return (l0 + l1);
-			if (h0 == l1)
-				return (l0 + w1);
-		}
-	} else {
-		if ((l0 == l1) || (l0 == h1)) {
-			return (w0 + w1);
-		} else {
-			return 0;
-		}
-	}
-	return 0;
-}
-
 void glue_two_nodes(Node* node0, Node* node1)
 {
 	int w0 = node0->get_width();
@@ -231,8 +178,6 @@ void glue_two_nodes(Node* node0, Node* node1)
 	int h1 = node1->get_height();
 	int l1 = node1->get_length();	
 	int w2 = 0, h2 = 0, l2 = 0;
-
-	// FIXME: Need to rewrite as if - else
 
 	if ((w0 == w1) || (w0 == l1) || (w0 == h1)) {
 		if (w0 == w1) {
