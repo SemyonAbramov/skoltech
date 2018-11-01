@@ -12,12 +12,8 @@ class Node {
 		int height;
 		int length;
 		int index;
-
 		int first_parent;
 		int second_parent;
-
-		Node* next;
-
 
 	public:
 		Node(int w = 0, int h = 0, int l = 0, int i = 0);
@@ -26,14 +22,11 @@ class Node {
 		int get_width();
 		int get_height();
 		int get_length();
-
-		int is_glued();
-
-		void set_parents(int first, int second);
-
 		int get_big_parent();
 		int get_small_parent(); 
 		int get_node_index();
+		void set_parents(int first, int second);
+		int is_glued();
 };
 
 Node::Node(int w, int h, int l, int i)
@@ -88,7 +81,7 @@ int Node::get_node_index()	{	return index;	}
 Node* current_max_node;
 std::list<Node*> new_glued_nodes;
 
-int get_mix_side_of_box(Node* node)
+int get_min_side_of_box(Node* node)
 {
 	int w = node->get_width();
 	int h = node->get_height();
@@ -107,14 +100,13 @@ int get_mix_side_of_box(Node* node)
 	}
 }
 
-//void check_max_node(Node** cur_node, Node** new_node)
 int check_max_node(Node** cur_node, Node** new_node)
 {
 	Node* c_node = *cur_node;
 	Node* n_node = *new_node;
 
-	int cur_min = get_mix_side_of_box(c_node);
-	int new_min = get_mix_side_of_box(n_node);
+	int cur_min = get_min_side_of_box(c_node);
+	int new_min = get_min_side_of_box(n_node);
 
 	if (cur_min < new_min) {
  		*cur_node = *new_node;
@@ -137,7 +129,6 @@ class HashTable {
 
 		int hash_func(int key);
 		void add_node(Node* node, int key);
-		//void delete_node();
 		int get_num_of_nodes_in_chain(int key);
 		Node* get_node_from_chain_by_index(int key, int index);
 };
@@ -147,6 +138,8 @@ HashTable::HashTable(int sz)
 	num_of_buckets = sz;
 	hash_table = new list<Node*>[num_of_buckets];
 }
+
+HashTable::~HashTable()	{ }
 
 int HashTable::hash_func(int key)
 {
@@ -158,7 +151,6 @@ void HashTable::add_node(Node* node, int key)
 	int idx = hash_func(key); 
     hash_table[idx].push_back(node);
 }
-
 
 int HashTable::get_num_of_nodes_in_chain(int key)
 {
@@ -261,7 +253,6 @@ void glue_two_nodes(Node* node0, Node* node1)
 				l2 = l0;
 				h2  = h0 + l1;
 			}
-			//cout << "here 0" << endl;
 		}
 
 		if (w0 == l1) {
@@ -282,7 +273,6 @@ void glue_two_nodes(Node* node0, Node* node1)
 				l2 = h0;
 				h2 =  w1 + l0;
 			}
-			//cout << "here 1" << endl;
 		}
 
 		if (w0 == h1) {
@@ -303,10 +293,8 @@ void glue_two_nodes(Node* node0, Node* node1)
 				l2 = h0;
 				h2 = l0 + w1;
 			}
-			//cout << "here 2" << endl;
 		}
 	} else {
-		//cout << "here 3" << endl;
 		if ((l0 == l1) || (l0 == h1)) {
 			
 			w2 = w0 + w1;
@@ -355,7 +343,7 @@ int main()
 {
 	HashTable* hash_table = new HashTable(HTABLE_SIZE);
 
-	current_max_node = new Node(0, 0, 0, 0);	// TODO: May be need to use just NULL pointer here, because memory may leaks
+	current_max_node = new Node(0, 0, 0, 0);
 	
 	std::ifstream infile("input.txt");
 
@@ -378,16 +366,21 @@ int main()
 
 	int num_of_glued_boxes = current_max_node->is_glued() + 1;
 
-	cout << num_of_glued_boxes << endl;
+	ofstream outfile;
+	outfile.open ("output.txt");
+
+	outfile << num_of_glued_boxes << endl;
 
 	if (current_max_node->is_glued()) {
-		cout << current_max_node->get_small_parent() << " " << current_max_node->get_big_parent() << endl;
-
+		outfile << current_max_node->get_small_parent() << " " << current_max_node->get_big_parent() << endl;
 	} else {
-		cout << current_max_node->get_node_index() << endl;
+		outfile << current_max_node->get_node_index() << endl;
 	}
 
-	cout << current_max_node->get_width() << " " << current_max_node->get_height() << " " << current_max_node->get_length() << endl;
+	outfile << get_min_side_of_box(current_max_node);
+
+	outfile.close();
+	infile.close();
 
 	return 0;
 }
