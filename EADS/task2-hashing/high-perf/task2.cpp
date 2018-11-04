@@ -11,15 +11,11 @@ using namespace std;
 
 class Node {
 	private:
-//		int width;
-//		int height;
-//		int length;
 		int index;
 		int first_parent;
 		int second_parent;
 
 	public:
-
 		int width;
 		int height;
 		int length;
@@ -142,6 +138,7 @@ class HashTable {
 		Node* get_node_from_chain_by_index(int key_0, int key_1, int index);
 		vector<Node*> get_chain_vector(int key_0, int key_1);
 
+
 };
 
 HashTable::HashTable(int sz)
@@ -150,13 +147,16 @@ HashTable::HashTable(int sz)
 	hash_table = new vector<Node*>[num_of_buckets];
 }
 
-HashTable::~HashTable()	{ }
-
-
-int HashTable::hash_func(int key)
+HashTable::~HashTable()	
 {
-	return key % HTABLE_SIZE;
+	for (int i = 0;  i < num_of_buckets; i++) {
+		for (std::vector<Node*>::iterator it = hash_table[i].begin(); it != hash_table[i].end(); ++ it) {
+			delete (*it);
+		}
+	}
 }
+
+int HashTable::hash_func(int key) { return key % HTABLE_SIZE; }
 
 void HashTable::add_node(Node* node, int side_0, int side_1) 
 {
@@ -226,18 +226,17 @@ void glue_two_nodes(Node* node0, Node* node1)
 	int w1 = node1->width;
 	int h1 = node1->height;
 	int l1 = node1->length;
-
 	int w2 = 0, h2 = 0, l2 = 0;
 	int node0_idx = node0->get_node_index();
 	int node1_idx = node1->get_node_index();
 
 	if ((w0 == w1) || (w0 == l1) || (w0 == h1)) {
+		
 		if (w0 == w1) {
 			w2 = w0;
 			if (l0 == l1) {
 				l2 = l0;
 				h2 = h0 + h1;
-				
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
@@ -245,16 +244,13 @@ void glue_two_nodes(Node* node0, Node* node1)
 			if (h0 == h1) {
 				h2 = h0;
 				l2 = (l0 + l1);
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 			if (h0 == l1) {
 				l2 = h0;
 				h2 = h1 + l0;
-				
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
@@ -262,7 +258,6 @@ void glue_two_nodes(Node* node0, Node* node1)
 			if (h1 == l0) {
 				l2 = l0;
 				h2  = h0 + l1;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
@@ -274,11 +269,9 @@ void glue_two_nodes(Node* node0, Node* node1)
 			if (l0 == w1) {
 				l2 = l0;
 				h2 = h0 + h1;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 			if (l0 == h1) {
 				l2 = l0;
@@ -286,25 +279,20 @@ void glue_two_nodes(Node* node0, Node* node1)
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 			if (h0 == w1) {
 				l2 = h0;
 				h2 =  h1 + l0;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 			if (h0 == h1) {
 				l2 = h0;
 				h2 =  w1 + l0;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 		}
 
@@ -313,11 +301,9 @@ void glue_two_nodes(Node* node0, Node* node1)
 			if (l0 == w1) {
 				l2 = l0;
 				h2 = h0 + l1;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 			if (l0 == l1) {
 				l2 = l0;
@@ -325,12 +311,10 @@ void glue_two_nodes(Node* node0, Node* node1)
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
-
 			}
 			if (h0 == w1) {
 				l2 = h0;
 				h2 = l0 + l1;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
@@ -338,7 +322,6 @@ void glue_two_nodes(Node* node0, Node* node1)
 			if (h0 == l1) {
 				l2 = h0;
 				h2 = l0 + w1;
-
 				if (compare_max(w2, h2, l2)) {
 					create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 				}
@@ -346,15 +329,12 @@ void glue_two_nodes(Node* node0, Node* node1)
 		}
 	} else {
 		if (((l0 == l1) && (h0 == h1)) || ((l0 == h1) && (h0 == l1))) {
-			
 			w2 = w0 + w1;
 			l2 = l0;
 			h2 = h0;
 			create_dual_node_and_check_max(w2, h2, l2, node0_idx, node1_idx);
 			return;
-		}
-
-		else {
+		} else {
 			return;
 		}
 	}
@@ -363,7 +343,6 @@ void glue_two_nodes(Node* node0, Node* node1)
 void check_two_sides(HashTable* hash_table, Node* new_node, int side_0, int side_1)
 {
 	std::vector<Node*> chain_vec = hash_table->get_chain_vector(side_0, side_1);
-
 	for (std::vector<Node*>::iterator it_0 = chain_vec.begin(); it_0 != chain_vec.end(); ++ it_0) {
 		glue_two_nodes(*it_0, new_node);
 	}
@@ -466,7 +445,6 @@ int main()
 
 		check_max_node(&current_max_node, &new_node);
 		check_dual_nodes(hash_table, new_node);
-
 		hash_box(&hash_table, new_node);
 	}
 
@@ -476,7 +454,7 @@ int main()
 	outfile.open ("output.txt");
 
 	outfile << num_of_glued_boxes << endl;
-
+	
 	if (current_max_node->is_glued()) {
 		outfile << current_max_node->get_small_parent() << " " << current_max_node->get_big_parent() << endl;
 	} else {
